@@ -23,14 +23,14 @@ class shorewall::simple (
 
     shorewall::simple::iface { $non_lo_ifaces: }
 
-    shorewall::policy { "policy-accept-local-to-all":
+    shorewall::policy { 'policy-accept-local-to-all':
         priority => '00',
         source   => '$FW',
         dest     => 'all',
         action   => 'ACCEPT',
     }
 
-    shorewall::policy { "policy-drop-$inet-to-local":
+    shorewall::policy { 'policy-drop-$inet-to-local':
         priority => '00',
         source   => $inet,
         dest     => '$FW',

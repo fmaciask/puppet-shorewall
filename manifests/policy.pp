@@ -9,7 +9,8 @@ define shorewall::policy (
     $ipv4      = $::shorewall::ipv4,
     $ipv6      = $::shorewall::ipv6,
 ) {
-    validate_re($priority, ['^\d+$','last'], "Valid values for $priority are any integer or 'last'.")
+#    validate_re($priority, ['^\d+$','last'], "Valid values for $priority are any integer or 'last'.")
+    validate_legacy(String, 'validate_re', $priority, ['^\d+$','last'], "Valid values for ${priority} are any integer or 'last'.")
 
     if $priority == 'last' {
         $order = 'q-last'
@@ -21,7 +22,7 @@ define shorewall::policy (
         concat::fragment { "policy-ipv4-${action}-${source}-to-${dest}":
             order   => $priority,
             target  => '/etc/shorewall/policy',
-            content => "${source} ${dest} ${action} ${log_level}\n",
+            content => "${source}   ${dest}    ${action}   ${log_level}\n",
         }
     }
 

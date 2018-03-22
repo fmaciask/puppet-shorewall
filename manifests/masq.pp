@@ -10,4 +10,4 @@ define shorewall::masq (
         content => inline_template("<% @sources.each { |source| %><%= @name %> <%= source %>\n<% } %>"),
     }
 
-}    
+}

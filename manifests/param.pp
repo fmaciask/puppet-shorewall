@@ -1,3 +1,4 @@
+# Use it with care
 define shorewall::param (
   $value,
   $proto = 'ipv4',

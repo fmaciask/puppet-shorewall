@@ -1,4 +1,4 @@
-
+# Whatever it need
 
 define shorewall::config (
     $value,
@@ -7,8 +7,8 @@ define shorewall::config (
 ) {
 
     if $ipv4 {
-      augeas { "shorewall-set-ipv4-$name":
-        changes => "set /files/etc/shorewall/shorewall.conf/$name '$value'",
+      augeas { "shorewall-set-ipv4-${name}":
+        changes => "set /files/etc/shorewall/shorewall.conf/${name} '${value}'",
         lens    => 'Shellvars.lns',
         incl    => '/etc/shorewall/shorewall.conf',
         notify  => Service['shorewall'],
@@ -17,8 +17,8 @@ define shorewall::config (
     }
 
     if $ipv6 {
-      augeas { "shorewall-set-ipv6-$name":
-        changes => "set /files/etc/shorewall6/shorewall6.conf/$name '$value'",
+      augeas { "shorewall-set-ipv6-${name}":
+        changes => "set /files/etc/shorewall6/shorewall6.conf/${name} '${value}'",
         lens    => 'Shellvars.lns',
         incl    => '/etc/shorewall/shorewall6.conf',
         notify  => Service['shorewall6'],

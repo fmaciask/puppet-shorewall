@@ -2,9 +2,9 @@
 
 define shorewall::tunnel (
     $proto   = 'ipv4',
+    $gateway = '0.0.0.0/0',
     $type,
     $zone,
-    $gateway = '0.0.0.0/0',
 ) {
     case $proto {
         'ipv4': {

@@ -1,10 +1,10 @@
 # ex: si ts=4 sw=4 et
 
 define shorewall::port (
+    Optional[Array] $source,
     $application = '',
     $proto       = '',
     $port        = '',
-    $source,
     $action      = 'ACCEPT',
     $order       = '50',
     $ipv4        = $::shorewall::ipv4,

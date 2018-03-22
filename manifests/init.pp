@@ -1,4 +1,5 @@
 # ex: si ts=4 sw=4 et
+#   type: 'ipv4'
 
 class shorewall (
     $ipv4                = true,
@@ -12,9 +13,14 @@ class shorewall (
     $maclist_disposition = 'REJECT',
     $log_martians        = true,
     $route_filter        = true,
-    $default_zone_entry  = "local firewall\n",
-    $blacklist           = ["NEW","INVALID","UNTRACKED"],
+#    $default_zone_entry  = "local firewall\n",
+    $default_zone_entry  = '',
+    $blacklist           = ['NEW','INVALID','UNTRACKED'],
     $config_test         = false,
+    $zones               = undef,
+    $ifaces              = undef,
+    $rules               = undef,
+    $policies            = undef,
 ) {
 
     include shorewall::defaults
@@ -24,22 +30,50 @@ class shorewall (
     $mangle_filename = $::shorewall::defaults::mangle_filename
     $service_restart = $shorewall::defaults::service_restart
     $service6_restart = $shorewall::defaults::service6_restart
+#    validate_legacy(Boolean, 'validate_bool', $config_test)
+    #validate_legacy(String, 'validate_string', $shorewall::iface)
+
+
+  if $default_zone_entry {
+      validate_legacy(String, 'validate_string', $shorewall::default_zone_entry)
+  }
+  $zones.each |$k,$v| {
+    ::shorewall::zone { $k:
+      * => $v,
+    }
+  }
+    $ifaces.each |$g,$v| {
+      ::shorewall::iface { $g:
+        * => $v,
+      }
+    }
+
+  $rules.each |$k,$v| {
+    ::shorewall::rule { $k:
+      * => $v,
+    }
+  }
+  $policies.each |$k,$v| {
+    ::shorewall::policy { $k:
+      * => $v,
+    }
+  }
 
     File {
-        ensure => present,
-        owner  => 'root',
-        group  => 'root',
-        mode   => '0644',
+      ensure => present,
+      owner  => 'root',
+      group  => 'root',
+      mode   => '0644',
     }
 
     if $ipv4 {
         package { 'shorewall':
-            ensure => latest,
+          ensure => latest,
         }
 
         file { '/etc/shorewall':
-            ensure  => directory,
-            require => Package['shorewall'],
+          ensure  => directory,
+          require => Package['shorewall'],
         }
 
         augeas { 'shorewall-default-startup':
@@ -60,7 +94,7 @@ class shorewall (
                 '/etc/shorewall/proxyarp',
                 '/etc/shorewall/hosts',
                 "/etc/shorewall/${mangle_filename}",
-                '/etc/shorewall/routestopped',
+#                '/etc/shorewall/routestopped',
                 '/etc/shorewall/conntrack',
                 '/etc/shorewall/stoppedrules'
             ]:
@@ -70,9 +104,10 @@ class shorewall (
 
         # ipv4 zones
         concat::fragment { 'zones-preamble':
-            order   => '00',
-            target  => '/etc/shorewall/zones',
-            content => "# This file is managed by puppet\n# Edits will be lost\n",
+            order  => '00',
+            target => '/etc/shorewall/zones',
+        #    content => "# This file is managed by puppet\n# Edits will be lost\n",
+            source => 'puppet:///modules/shorewall/zones_header',
         }
 
         concat::fragment { 'shorewall-zones-local':
@@ -83,23 +118,26 @@ class shorewall (
 
         # ipv4 interfaces
         concat::fragment { 'interfaces-preamble':
-            order   => '00',
-            target  => '/etc/shorewall/interfaces',
-            content => "# This file is managed by puppet\n# Changes will be lost\n",
+            order  => '00',
+            target => '/etc/shorewall/interfaces',
+#            content => "# This file is managed by puppet\n# Changes will be lost\n",
+            source => 'puppet:///modules/shorewall/interfaces_header',
         }
 
         # ipv4 policy
         concat::fragment { 'policy-preamble':
-            order   => 'a-00',
+            order   => '00',
             target  => '/etc/shorewall/policy',
-            content => "# This file is managed by puppet\n# Changes will be lost\n",
+#            content => "# This file is managed by puppet\n# Changes will be lost\n",
+            source => 'puppet:///modules/shorewall/policy_header',
         }
 
         # ipv4 rules
         concat::fragment { 'rules-preamble':
-            order   => '00',
-            target  => '/etc/shorewall/rules',
-            content => "# This file is managed by puppet\n# Changes will be lost\n",
+            order  => '00',
+            target => '/etc/shorewall/rules',
+#            content => "# This file is managed by puppet\n# Changes will be lost\n",
+            source => 'puppet:///modules/shorewall/rules_header',
         }
 
         # ipv4 rules SECTION NEW
@@ -111,9 +149,9 @@ class shorewall (
 
         # ipv4 blacklist
         concat::fragment { "${blacklist_filename}-preamble":
-            order   => '01',
-            target  => "/etc/shorewall/${blacklist_filename}",
-            source  => "puppet:///modules/shorewall/${blacklist_filename}_header",
+            order  => '01',
+            target => "/etc/shorewall/${blacklist_filename}",
+            source => "puppet:///modules/shorewall/${blacklist_filename}_header",
         }
 
         # ipv4 hosts
@@ -163,17 +201,10 @@ class shorewall (
             content => "# This file is managed by puppet\n# Changes will be lost\n",
         }
 
-        # ipv4 routestopped
-        concat::fragment { 'routestopped-preamble':
-            order   => '00',
-            target  => '/etc/shorewall/routestopped',
-            content => "# This file is managed by puppet\n# Changes will be lost\n",
-        }
-
         #ipv4 conntrack
         concat::fragment { 'conntrack-header':
-            order   => '00',
-            target  => '/etc/shorewall/conntrack',
+            order  => '00',
+            target => '/etc/shorewall/conntrack',
             source => 'puppet:///modules/shorewall/conntrack_header',
         }
 
@@ -305,9 +336,9 @@ class shorewall (
 
         # ipv6 blacklist
         concat::fragment { "${blacklist_filename}-ipv6-preamble":
-            order   => '00',
-            target  => "/etc/shorewall6/${blacklist_filename}",
-            source  => "puppet:///modules/shorewall/${blacklist_filename}_header",
+            order  => '00',
+            target => "/etc/shorewall6/${blacklist_filename}",
+            source => "puppet:///modules/shorewall/${blacklist_filename}_header",
         }
 
         # ipv6 tunnels
@@ -330,17 +361,17 @@ class shorewall (
         }
 
         # ipv6 routestopped
-        concat::fragment { 'routestopped6-preamble':
+        concat::fragment { 'stoppedrules6-preamble':
             order   => '00',
-            target  => '/etc/shorewall6/routestopped',
+            target  => '/etc/shorewall6/stoppedrules',
             content => "# This file is managed by puppet\n# Changes will be lost\n",
         }
 
         # ipv6 conntrack
         concat::fragment { 'conntrack6-header':
-            order   => '00',
-            target  => '/etc/shorewall6/conntrack',
-            source  => 'puppet:///modules/shorewall/conntrack6_header',
+            order  => '00',
+            target => '/etc/shorewall6/conntrack',
+            source => 'puppet:///modules/shorewall/conntrack6_header',
         }
 
         # ipv6 conntrack
@@ -362,23 +393,38 @@ class shorewall (
         }
     }
 
-    shorewall::config {"IP_FORWARDING":
-        value => $ip_forwarding ? { true => "Yes", false => "No", 'keep' => "Keep" },
+    shorewall::config {'IP_FORWARDING':
+        value => $ip_forwarding ? {
+          true   => 'Yes',
+          false  => 'No',
+          'keep' => 'Keep',
+        },
+
     }
-    shorewall::config {"LOG_MARTIANS":
-        value => $log_martians ? { true => "Yes", false => "No", 'keep' => "Keep" },
+    shorewall::config {'LOG_MARTIANS':
+        value => $log_martians ? {
+          true   => 'Yes',
+          false  => 'No',
+          'keep' => 'Keep',
+        },
     }
-    shorewall::config {"MACLIST_TTL":
+    shorewall::config {'MACLIST_TTL':
         value => $maclist_ttl,
     }
-    shorewall::config {"MACLIST_DISPOSITION":
+    shorewall::config {'MACLIST_DISPOSITION':
         value => $maclist_disposition,
     }
-    shorewall::config {"TC_ENABLED":
-        value => $traffic_control ? { true => "Simple", false => "Internal" },
+    shorewall::config {'TC_ENABLED':
+        value => $traffic_control ? { true => 'Simple', false => 'Internal' },
     }
-    shorewall::config {"ROUTE_FILTER":
-        value => $route_filter ? { true => "Yes", false => "No", 'keep' => "Keep" },
+    shorewall::config {'ROUTE_FILTER':
+        value => $route_filter ? {
+          true   => 'Yes',
+          false  => 'No',
+          'keep' => 'Keep',
+        },
         ipv6  => false,
     }
+#    create_resources('shorewall::rule', lookup('shorewall::rule', {merge => 'deep'}))
+
 }

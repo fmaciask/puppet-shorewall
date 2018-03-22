@@ -4,7 +4,7 @@ define shorewall::iface (
     $proto         = 'ipv4',
     $interface     = '',
     $options       = [],
-    $zone,
+    $zone          = undef,
     $type          = 'External',
     $in_bandwidth  = '-',
     $out_bandwidth = false,
